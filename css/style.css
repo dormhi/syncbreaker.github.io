@@ -1,0 +1,39 @@
+/* SyncBreaker — Beta Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-dark: #0a0e17;
+    --bg-mid: #111827;
+    --accent: #3b82f6;
+    --accent-dim: rgba(59, 130, 246, 0.3);
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --border: #1e293b;
+    --font-display: 'Orbitron', monospace;
+    --font-body: 'Rajdhani', sans-serif;
+}
+
+body {
+    background: var(--bg-dark);
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-body);
+    color: var(--text);
+}
+
+canvas {
+    display: block;
+    background: var(--bg-dark);
+}
