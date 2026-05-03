@@ -255,29 +255,44 @@ class GameManager {
                 this._lockpickReason = lCtx.reason || 'shortcut';
                 this._lockpickLevelIndex = lCtx.levelIndex;
                 this._lockpickScore = lCtx.score || 0;
+                // Endless revive context
+                this._lockpickEndlessCtx = {
+                    score: lCtx.endlessScore || 0,
+                    wave: lCtx.endlessWave || 1,
+                    maxCombo: lCtx.endlessMaxCombo || 0,
+                    hitCount: lCtx.endlessHitCount || 0
+                };
 
                 const diff = lCtx.difficulty || 1;
                 this.lockpick.start(diff, (success) => {
                     if (success) {
                         if (this._lockpickReason === 'shortcut') {
-                            // Level'ı aç
                             if (this._lockpickLevelIndex !== undefined) {
                                 this.levels.levels[this._lockpickLevelIndex].unlocked = true;
                                 this.levels._saveProgress();
                             }
                             this.state.change(S.HUB);
                         } else if (this._lockpickReason === 'revive') {
-                            // Kaldığı yerden devam — 1 can ile
                             this.levels.lives = 1;
                             this.levels.levelFailed = false;
                             this.levels.usedRevive = true;
                             this.state.change(S.LEVEL);
+                        } else if (this._lockpickReason === 'endless_revive') {
+                            // Sonsuz modda kaldığı yerden devam — 1 can
+                            this.levels.lives = 1;
+                            this.levels.levelFailed = false;
+                            this.state.change(S.ENDLESS);
                         }
                     } else {
                         if (this._lockpickReason === 'revive') {
                             this.state.change(S.GAME_OVER, {
                                 levelIndex: this._lockpickLevelIndex,
                                 score: this._lockpickScore,
+                                noRevive: true
+                            });
+                        } else if (this._lockpickReason === 'endless_revive') {
+                            this.state.change(S.ENDLESS_OVER, {
+                                ...this._lockpickEndlessCtx,
                                 noRevive: true
                             });
                         } else {
@@ -294,8 +309,9 @@ class GameManager {
                 const H = this.canvas.height;
 
                 // Başlık
-                const title = this._lockpickReason === 'revive' ? 'KURTARMA PROTOKOLÜ' : 'ŞİFRE KIRICI';
-                const subtitle = this._lockpickReason === 'revive'
+                const isRevive = this._lockpickReason === 'revive' || this._lockpickReason === 'endless_revive';
+                const title = isRevive ? 'KURTARMA PROTOKOLÜ' : 'ŞİFRE KIRICI';
+                const subtitle = isRevive
                     ? 'Bağlantıyı yeniden kurmak için şifreyi kır'
                     : 'Kilitli düğüme erişmek için güvenlik şifresini kır';
                 ctx.fillStyle = '#f59e0b';
@@ -409,6 +425,147 @@ class GameManager {
             }
         });
 
+        // ── ENDLESS (Sonsuz Mod) ──
+        this.state.register(S.ENDLESS, {
+            enter: () => {
+                this.ui.clearButtons();
+                // Revive'dan dönüyorsa sıfırlamadan devam et
+                if (!this.levels.endlessMode) {
+                    this.levels.startEndless();
+                }
+            },
+            update: (dt) => {
+                this.levels.updateEndless(dt);
+
+                if (this.levels.levelFailed === true) {
+                    this.levels.levelFailed = 'handled';
+                    this.state.change(S.ENDLESS_OVER, {
+                        score: this.levels.score,
+                        wave: this.levels.endlessWave,
+                        maxCombo: this.levels.maxCombo,
+                        hitCount: this.levels.hitCount
+                    });
+                }
+            },
+            render: (ctx) => {
+                const W = this.canvas.width;
+                const H = this.canvas.height;
+
+                this.ui.renderScore(this.levels.score, this.levels.combo);
+                this.ui.renderEnergyBar({
+                    current: this.energy.currentEnergy,
+                    max: this.energy.maxEnergy,
+                    nextRegenIn: this.energy.getTimeToNextRegen()
+                });
+                this.levels.renderEndless(ctx, W, H);
+            },
+            exit: () => this.ui.clearButtons(),
+            onKey: (e) => {
+                if (e.code === 'Space') this.levels.hitEndless();
+                if (e.code === 'Escape') {
+                    this.levels.endlessMode = false;
+                    this.state.change(S.HUB);
+                }
+            }
+        });
+
+        // ── ENDLESS OVER ──
+        this.state.register(S.ENDLESS_OVER, {
+            enter: (context) => {
+                this.ui.clearButtons();
+                const cx = this.canvas.width / 2;
+                const cy = this.canvas.height / 2;
+                const lCtx = context || {};
+
+                this._eoScore = lCtx.score || 0;
+                this._eoWave = lCtx.wave || 1;
+                this._eoMaxCombo = lCtx.maxCombo || 0;
+                this._eoHitCount = lCtx.hitCount || 0;
+                this._eoNoRevive = lCtx.noRevive || false;
+
+                // Sonsuz modda revive — enerji oldukça sınırsız!
+                if (!this._eoNoRevive && this.energy.canAfford('REVIVE')) {
+                    const lockDiff = Math.min(this._eoWave, 6);
+                    this.ui.addButton('revive', '🔄 KURTARMA PROTOKOLÜ (1⚡)', cx, cy + 50, 290, 42,
+                        () => {
+                            if (this.energy.spend('REVIVE')) {
+                                this.state.change(S.LOCKPICK, {
+                                    reason: 'endless_revive',
+                                    difficulty: lockDiff,
+                                    endlessScore: this._eoScore,
+                                    endlessWave: this._eoWave,
+                                    endlessMaxCombo: this._eoMaxCombo,
+                                    endlessHitCount: this._eoHitCount
+                                });
+                            }
+                        },
+                        { color: '#f59e0b' }
+                    );
+                }
+
+                // Yeniden başlat
+                this.ui.addButton('restart', '↻ YENİDEN BAŞLA', cx, cy + 105, 200, 40,
+                    () => {
+                        this.levels.endlessMode = false;
+                        this.state.change(S.ENDLESS);
+                    },
+                    { color: '#3b82f6' }
+                );
+
+                // Hub'a dön
+                this.ui.addButton('hub', '← DÜĞÜM SEÇİMİ', cx, cy + 155, 200, 40,
+                    () => {
+                        this.levels.endlessMode = false;
+                        this.state.change(S.HUB);
+                    },
+                    { color: '#64748b' }
+                );
+            },
+            render: (ctx) => {
+                const W = this.canvas.width;
+                const H = this.canvas.height;
+                const cx = W / 2;
+                const cy = H / 2;
+
+                ctx.fillStyle = '#ef4444';
+                ctx.font = '900 26px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.fillText('SAVUNMA ÇÖKTÜ', cx, cy - 80);
+
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = '700 32px Orbitron';
+                ctx.fillText(this._eoScore.toString(), cx, cy - 40);
+
+                ctx.fillStyle = '#64748b';
+                ctx.font = '500 15px Rajdhani';
+                ctx.fillText(`Wave: ${this._eoWave} | Hit: ${this._eoHitCount} | Max Combo: x${this._eoMaxCombo}`, cx, cy - 10);
+
+                // Best
+                const best = this.levels._loadEndlessBest();
+                if (this._eoScore >= best && best > 0) {
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.font = '600 14px Rajdhani';
+                    ctx.fillText('🏆 YENİ REKOR!', cx, cy + 15);
+                } else if (best > 0) {
+                    ctx.fillStyle = '#475569';
+                    ctx.font = '400 13px Rajdhani';
+                    ctx.fillText(`En iyi: ${best}`, cx, cy + 15);
+                }
+
+                if (this._eoNoRevive) {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.font = '400 13px Rajdhani';
+                    ctx.fillText('Kurtarma protokolü başarısız', cx, cy + 32);
+                }
+
+                this.ui.renderButtons();
+            },
+            exit: () => this.ui.clearButtons(),
+            onKey: (e) => {
+                if (e.code === 'Escape') this.state.change(S.HUB);
+            }
+        });
+
         // İlk state'e gir
         const menuH = this.state._handlers[S.MENU];
         if (menuH) menuH.enter();
@@ -468,6 +625,24 @@ class GameManager {
                     { color: '#475569', subtitle: level.desc }
                 );
             }
+        }
+
+        // Sonsuz Mod butonu
+        const allDone = this.levels.isAllCompleted();
+        const endlessY = startY + 2 * (btnH + gapY) + btnH / 2 + 30;
+        if (allDone) {
+            const bestScore = this.levels._loadEndlessBest();
+            const endlessSubtitle = bestScore > 0 ? `En iyi: ${bestScore}` : 'Sınırsız zorluk, sınırsız eğlence';
+            this.ui.addButton('endless', '∞ SONSUZ MOD', W / 2, endlessY, 240, 50,
+                () => this.state.change(this.state.STATES.ENDLESS),
+                { color: '#f59e0b', subtitle: endlessSubtitle }
+            );
+        } else {
+            const remaining = this.levels.levels.filter(l => !l.completed).length;
+            this.ui.addButton('endless', `🔒 SONSUZ MOD`, W / 2, endlessY, 240, 50,
+                () => {},
+                { color: '#475569', disabled: true, subtitle: `${remaining} düğüm kaldı` }
+            );
         }
 
         // Menüye dön

@@ -9,7 +9,9 @@ class StateManager {
             HUB: 'HUB',
             LEVEL: 'LEVEL',
             LOCKPICK: 'LOCKPICK',
-            GAME_OVER: 'GAME_OVER'
+            GAME_OVER: 'GAME_OVER',
+            ENDLESS: 'ENDLESS',
+            ENDLESS_OVER: 'ENDLESS_OVER'
         });
 
         this.currentState = this.STATES.MENU;

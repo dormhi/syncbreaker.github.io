@@ -323,4 +323,313 @@ class LevelManager {
             }
         } catch (e) {}
     }
+
+    // ════════════════════════════════════════
+    //  SONSUZ MOD (ENDLESS)
+    // ════════════════════════════════════════
+
+    isAllCompleted() {
+        return this.levels.every(l => l.completed);
+    }
+
+    /**
+     * Sonsuz modu başlat
+     * Timer yok, wave sistemi, sürekli hızlanan
+     */
+    startEndless() {
+        this.endlessMode = true;
+        this.currentLevelIndex = -1;
+        this.currentLevel = {
+            id: 999,
+            name: 'SONSUZ_MOD',
+            desc: 'Sistemde kalıcı savunma — dayanabildiğin kadar dayan',
+            barSpeed: 0.6,
+            targetSize: 0.24,
+            requiredHits: Infinity,
+            maxTime: Infinity,
+            lockpickDiff: 1
+        };
+
+        this.score = 0;
+        this.combo = 0;
+        this.maxCombo = 0;
+        this.lives = 3;
+        this.hitCount = 0;
+        this.barPosition = 0;
+        this.barSpeed = this.currentLevel.barSpeed;
+        this.barDirection = 1;
+        this.levelComplete = false;
+        this.levelFailed = false;
+        this.lastHitResult = null;
+        this.hitAnimTimer = 0;
+        this.particles = [];
+        this.timer = Infinity;
+        this.usedRevive = false;
+
+        // Wave sistemi
+        this.endlessWave = 1;
+        this.endlessHitsInWave = 0;
+        this.endlessHitsPerWave = 5;
+        this.endlessWaveFlash = 0;
+
+        // Best score
+        this.endlessBest = this._loadEndlessBest();
+
+        this._generateTargetZone();
+    }
+
+    /**
+     * Sonsuz modda hit — wave sistemi ile zorluk artışı
+     */
+    hitEndless() {
+        if (!this.currentLevel || this.levelFailed) return;
+
+        const pos = this.barPosition;
+        const inZone = pos >= this.targetZoneStart && pos <= this.targetZoneEnd;
+
+        if (inZone) {
+            const center = (this.targetZoneStart + this.targetZoneEnd) / 2;
+            const dist = Math.abs(pos - center) / ((this.targetZoneEnd - this.targetZoneStart) / 2);
+
+            if (dist < 0.35) {
+                this.combo++;
+                this.score += 100 * this.combo * this.endlessWave;
+                this.lastHitResult = 'perfect';
+                this._spawnParticles(pos, '#22c55e', 8);
+            } else {
+                this.combo++;
+                this.score += 50 * this.combo * this.endlessWave;
+                this.lastHitResult = 'good';
+                this._spawnParticles(pos, '#3b82f6', 5);
+            }
+            this.hitCount++;
+            this.endlessHitsInWave++;
+            if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+
+            // Wave ilerlemesi
+            if (this.endlessHitsInWave >= this.endlessHitsPerWave) {
+                this.endlessWave++;
+                this.endlessHitsInWave = 0;
+                this.endlessWaveFlash = 1.0;
+                this._endlessScaleUp();
+            }
+        } else {
+            this.combo = 0;
+            this.lives--;
+            this.lastHitResult = 'miss';
+            this._spawnParticles(pos, '#ef4444', 6);
+
+            if (this.lives <= 0) {
+                this.levelFailed = true;
+                this._saveEndlessBest();
+                return;
+            }
+        }
+
+        this.hitAnimTimer = 0.5;
+        this._generateTargetZone();
+        // Küçük hız artışı her hit'te
+        this.barSpeed = Math.min(this.barSpeed + 0.008, 4.0);
+    }
+
+    /**
+     * Wave geçildiğinde zorluk artır
+     */
+    _endlessScaleUp() {
+        // Hedef küçülsün
+        this.currentLevel.targetSize = Math.max(this.currentLevel.targetSize - 0.012, 0.05);
+        // Hız artsın
+        this.currentLevel.barSpeed = Math.min(this.currentLevel.barSpeed + 0.15, 4.0);
+        this.barSpeed = this.currentLevel.barSpeed;
+        // Lockpick zorluğu
+        this.currentLevel.lockpickDiff = Math.min(this.endlessWave, 6);
+        // Bonus can (her 3 wave'de)
+        if (this.endlessWave % 3 === 0) {
+            this.lives = Math.min(this.lives + 1, 5);
+        }
+    }
+
+    /**
+     * Sonsuz mod update — timer yok, sadece bar ve parçacıklar
+     */
+    updateEndless(dt) {
+        if (!this.currentLevel || this.levelFailed) return;
+
+        // Bar hareketi
+        this.barPosition += this.barSpeed * this.barDirection * dt;
+        if (this.barPosition >= 1) { this.barPosition = 1; this.barDirection = -1; }
+        else if (this.barPosition <= 0) { this.barPosition = 0; this.barDirection = 1; }
+
+        // Hit anim
+        if (this.lastHitResult) {
+            this.hitAnimTimer -= dt;
+            if (this.hitAnimTimer <= 0) this.lastHitResult = null;
+        }
+
+        // Wave flash
+        if (this.endlessWaveFlash > 0) {
+            this.endlessWaveFlash -= dt * 2;
+        }
+
+        // Parçacıklar
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vy += 150 * dt;
+            p.life -= p.decay * dt;
+            if (p.life <= 0) this.particles.splice(i, 1);
+        }
+    }
+
+    /**
+     * Sonsuz mod render — wave bilgisi göster
+     */
+    renderEndless(ctx, W, H) {
+        if (!this.currentLevel) return;
+
+        const barY = H * 0.55;
+        const barX = W * 0.12;
+        const barW = W * 0.76;
+        const barH = 12;
+
+        // Bar arkaplan
+        ctx.save();
+        ctx.fillStyle = 'rgba(30,41,59,0.6)';
+        Utils.roundRect(ctx, barX, barY - barH / 2, barW, barH, 6);
+        ctx.fill();
+
+        // Hedef bölge
+        const zoneX = barX + this.targetZoneStart * barW;
+        const zoneW = (this.targetZoneEnd - this.targetZoneStart) * barW;
+        ctx.fillStyle = 'rgba(34,197,94,0.2)';
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 1.5;
+        Utils.roundRect(ctx, zoneX, barY - barH / 2 - 4, zoneW, barH + 8, 4);
+        ctx.fill();
+        ctx.stroke();
+
+        // Gösterge
+        const ix = barX + this.barPosition * barW;
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(ix, barY - barH - 2);
+        ctx.lineTo(ix, barY + barH + 2);
+        ctx.stroke();
+
+        // Gösterge üçgen
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.moveTo(ix, barY - barH - 2);
+        ctx.lineTo(ix - 5, barY - barH - 10);
+        ctx.lineTo(ix + 5, barY - barH - 10);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+
+        // Hit sonuç yazısı
+        if (this.lastHitResult) {
+            const labels = {
+                perfect: { text: 'PERFECT', color: '#22c55e' },
+                good: { text: 'GOOD', color: '#3b82f6' },
+                miss: { text: 'MISS', color: '#ef4444' }
+            };
+            const r = labels[this.lastHitResult];
+            const alpha = Utils.clamp(this.hitAnimTimer / 0.5, 0, 1);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = r.color;
+            ctx.font = '700 26px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText(r.text, W / 2, barY - 45);
+            ctx.restore();
+        }
+
+        // Parçacıklar
+        for (const p of this.particles) {
+            ctx.save();
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(barX + p.barPos * barW + p.x, barY + p.y, p.size * p.life, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Wave flash efekti
+        if (this.endlessWaveFlash > 0) {
+            ctx.save();
+            ctx.globalAlpha = this.endlessWaveFlash * 0.15;
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(0, 0, W, H);
+            ctx.restore();
+        }
+
+        // ── Endless Info ──
+        this._renderEndlessInfo(ctx, W, H);
+    }
+
+    _renderEndlessInfo(ctx, W, H) {
+        ctx.save();
+
+        // Wave
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = '700 18px Orbitron';
+        ctx.textAlign = 'center';
+        ctx.fillText(`WAVE ${this.endlessWave}`, W / 2, 70);
+
+        // Desc
+        ctx.fillStyle = '#64748b';
+        ctx.font = '400 13px Rajdhani';
+        ctx.fillText('∞ SONSUZ MOD — Dayanabildiğin kadar dayan', W / 2, 90);
+
+        // Wave ilerleme barı
+        const progW = 120;
+        const progH = 4;
+        const progX = W / 2 - progW / 2;
+        const progY = 100;
+        ctx.fillStyle = '#1e293b';
+        Utils.roundRect(ctx, progX, progY, progW, progH, 2);
+        ctx.fill();
+        const waveProg = this.endlessHitsInWave / this.endlessHitsPerWave;
+        if (waveProg > 0) {
+            ctx.fillStyle = '#f59e0b';
+            Utils.roundRect(ctx, progX, progY, progW * waveProg, progH, 2);
+            ctx.fill();
+        }
+        ctx.fillStyle = '#475569';
+        ctx.font = '400 10px Rajdhani';
+        ctx.fillText(`${this.endlessHitsInWave}/${this.endlessHitsPerWave}`, W / 2, progY + 16);
+
+        // Canlar (solda)
+        ctx.textAlign = 'right';
+        ctx.font = '18px sans-serif';
+        for (let i = 0; i < Math.max(this.lives, 3); i++) {
+            ctx.fillStyle = i < this.lives ? '#ef4444' : 'rgba(239,68,68,0.2)';
+            ctx.fillText('♥', W - 16 - i * 24, 75);
+        }
+
+        // Best score
+        if (this.endlessBest > 0) {
+            ctx.fillStyle = '#475569';
+            ctx.font = '400 12px Rajdhani';
+            ctx.textAlign = 'right';
+            ctx.fillText(`EN İYİ: ${this.endlessBest}`, W - 16, 100);
+        }
+
+        ctx.restore();
+    }
+
+    _saveEndlessBest() {
+        if (this.score > this.endlessBest) {
+            this.endlessBest = this.score;
+            try { localStorage.setItem('sb_endless_best', this.score); } catch (e) {}
+        }
+    }
+
+    _loadEndlessBest() {
+        try { return parseInt(localStorage.getItem('sb_endless_best')) || 0; } catch (e) { return 0; }
+    }
 }
