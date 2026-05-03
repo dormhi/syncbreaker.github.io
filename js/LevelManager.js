@@ -1,6 +1,6 @@
 /* =========================================
-   LevelManager.js — Level Yöneticisi
-   Timing bar mekaniği + level verileri
+   LevelManager.js — Level Manager
+   Timing bar mechanic + level data
    ========================================= */
 
 class LevelManager {
@@ -9,13 +9,13 @@ class LevelManager {
         this.currentLevelIndex = -1;
         this.currentLevel = null;
 
-        // Oyun içi
+        // In-game
         this.score = 0;
         this.combo = 0;
         this.maxCombo = 0;
         this.lives = 3;
         this.timer = 0;
-        this.usedRevive = false; // Level başına 1 revive hakkı
+        this.usedRevive = false; // 1 revive per level
 
         // Timing bar
         this.barPosition = 0;
@@ -28,11 +28,11 @@ class LevelManager {
         this.lastHitResult = null;
         this.hitAnimTimer = 0;
 
-        // Durum
+        // State
         this.levelComplete = false;
         this.levelFailed = false;
 
-        // Parçacıklar (basit)
+        // Particles (simple)
         this.particles = [];
 
         this._loadProgress();
@@ -40,12 +40,12 @@ class LevelManager {
 
     _createLevels() {
         return [
-            { id: 1, name: 'LOG_TEMIZLE', desc: 'Saldırganın log dosyalarını sil', difficulty: 1, barSpeed: 0.7, targetSize: 0.22, requiredHits: 8, maxTime: 25, unlocked: true, completed: false, bestScore: 0, lockpickDiff: 1 },
-            { id: 2, name: 'PORT_KAPAT', desc: 'Açık bırakılan arka kapıları kapat', difficulty: 2, barSpeed: 0.9, targetSize: 0.18, requiredHits: 10, maxTime: 28, unlocked: false, completed: false, bestScore: 0, lockpickDiff: 2 },
-            { id: 3, name: 'MALWARE_SIL', desc: 'Zararlı yazılımları tespit et ve sil', difficulty: 3, barSpeed: 1.1, targetSize: 0.15, requiredHits: 12, maxTime: 30, unlocked: false, completed: false, bestScore: 0, lockpickDiff: 3 },
-            { id: 4, name: 'SIFRE_YENİLE', desc: 'Ele geçirilen şifreleri sıfırla', difficulty: 4, barSpeed: 1.4, targetSize: 0.12, requiredHits: 14, maxTime: 35, unlocked: false, completed: false, bestScore: 0, lockpickDiff: 4 },
-            { id: 5, name: 'FIREWALL', desc: 'Güvenlik duvarını yeniden kur', difficulty: 5, barSpeed: 1.7, targetSize: 0.10, requiredHits: 16, maxTime: 40, unlocked: false, completed: false, bestScore: 0, lockpickDiff: 5 },
-            { id: 6, name: 'KORSAN_KES', desc: 'Saldırganın bağlantısını tamamen kes', difficulty: 6, barSpeed: 2.1, targetSize: 0.08, requiredHits: 18, maxTime: 45, unlocked: false, completed: false, bestScore: 0, lockpickDiff: 6 }
+            { id: 1, name: 'CLEAR_LOGS', desc: 'Delete the attacker\'s log files', difficulty: 1, barSpeed: 0.7, targetSize: 0.22, requiredHits: 8, maxTime: 25, unlocked: true, completed: false, bestScore: 0, lockpickDiff: 1 },
+            { id: 2, name: 'CLOSE_PORTS', desc: 'Shut down open backdoors', difficulty: 2, barSpeed: 0.9, targetSize: 0.18, requiredHits: 10, maxTime: 28, unlocked: false, completed: false, bestScore: 0, lockpickDiff: 2 },
+            { id: 3, name: 'REMOVE_MALWARE', desc: 'Detect and remove malicious software', difficulty: 3, barSpeed: 1.1, targetSize: 0.15, requiredHits: 12, maxTime: 30, unlocked: false, completed: false, bestScore: 0, lockpickDiff: 3 },
+            { id: 4, name: 'RESET_CREDS', desc: 'Reset compromised credentials', difficulty: 4, barSpeed: 1.4, targetSize: 0.12, requiredHits: 14, maxTime: 35, unlocked: false, completed: false, bestScore: 0, lockpickDiff: 4 },
+            { id: 5, name: 'FIREWALL', desc: 'Rebuild the firewall', difficulty: 5, barSpeed: 1.7, targetSize: 0.10, requiredHits: 16, maxTime: 40, unlocked: false, completed: false, bestScore: 0, lockpickDiff: 5 },
+            { id: 6, name: 'CUT_ACCESS', desc: 'Completely sever the attacker\'s connection', difficulty: 6, barSpeed: 2.1, targetSize: 0.08, requiredHits: 18, maxTime: 45, unlocked: false, completed: false, bestScore: 0, lockpickDiff: 6 }
         ];
     }
 
@@ -88,7 +88,7 @@ class LevelManager {
             return;
         }
 
-        // Bar hareketi (ping-pong)
+        // Bar movement (ping-pong)
         this.barPosition += this.barSpeed * this.barDirection * dt;
         if (this.barPosition >= 1) { this.barPosition = 1; this.barDirection = -1; }
         else if (this.barPosition <= 0) { this.barPosition = 0; this.barDirection = 1; }
@@ -99,7 +99,7 @@ class LevelManager {
             if (this.hitAnimTimer <= 0) this.lastHitResult = null;
         }
 
-        // Parçacıklar
+        // Particles
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             p.x += p.vx * dt;
@@ -200,13 +200,13 @@ class LevelManager {
         const barW = W * 0.76;
         const barH = 12;
 
-        // Bar arkaplan
+        // Bar background
         ctx.save();
         ctx.fillStyle = 'rgba(30,41,59,0.6)';
         Utils.roundRect(ctx, barX, barY - barH / 2, barW, barH, 6);
         ctx.fill();
 
-        // Hedef bölge
+        // Target zone
         const zoneX = barX + this.targetZoneStart * barW;
         const zoneW = (this.targetZoneEnd - this.targetZoneStart) * barW;
         ctx.fillStyle = 'rgba(34,197,94,0.2)';
@@ -216,7 +216,7 @@ class LevelManager {
         ctx.fill();
         ctx.stroke();
 
-        // Gösterge (hareket eden çizgi)
+        // Indicator (moving line)
         const ix = barX + this.barPosition * barW;
         ctx.strokeStyle = '#f59e0b';
         ctx.lineWidth = 2.5;
@@ -225,7 +225,7 @@ class LevelManager {
         ctx.lineTo(ix, barY + barH + 2);
         ctx.stroke();
 
-        // Gösterge uç üçgen
+        // Indicator tip triangle
         ctx.fillStyle = '#f59e0b';
         ctx.beginPath();
         ctx.moveTo(ix, barY - barH - 2);
@@ -236,7 +236,7 @@ class LevelManager {
 
         ctx.restore();
 
-        // Hit sonuç yazısı
+        // Hit result text
         if (this.lastHitResult) {
             const labels = {
                 perfect: { text: 'PERFECT', color: '#22c55e' },
@@ -254,7 +254,7 @@ class LevelManager {
             ctx.restore();
         }
 
-        // Parçacıklar
+        // Particles
         for (const p of this.particles) {
             ctx.save();
             ctx.globalAlpha = p.life;
@@ -265,35 +265,35 @@ class LevelManager {
             ctx.restore();
         }
 
-        // Level bilgileri
+        // Level info
         this._renderInfo(ctx, W, H);
     }
 
     _renderInfo(ctx, W, H) {
         ctx.save();
 
-        // Level adı
+        // Level name
         ctx.fillStyle = '#e2e8f0';
         ctx.font = '600 16px Orbitron';
         ctx.textAlign = 'center';
         ctx.fillText(this.currentLevel.name, W / 2, 75);
 
-        // Açıklama
+        // Description
         ctx.fillStyle = '#64748b';
         ctx.font = '400 14px Rajdhani';
         ctx.fillText(this.currentLevel.desc, W / 2, 95);
 
-        // İlerleme
+        // Progress
         ctx.fillText(`Hit: ${this.hitCount}/${this.currentLevel.requiredHits}`, W / 2, 115);
 
-        // Süre
+        // Time
         const timeColor = this.timer < 10 ? '#ef4444' : '#64748b';
         ctx.fillStyle = timeColor;
         ctx.font = '500 14px Rajdhani';
         ctx.textAlign = 'right';
-        ctx.fillText(`Süre: ${Utils.formatTime(this.timer)}`, W - 16, 75);
+        ctx.fillText(`Time: ${Utils.formatTime(this.timer)}`, W - 16, 75);
 
-        // Canlar
+        // Lives
         ctx.textAlign = 'right';
         ctx.font = '18px sans-serif';
         for (let i = 0; i < 3; i++) {
@@ -325,7 +325,7 @@ class LevelManager {
     }
 
     // ════════════════════════════════════════
-    //  SONSUZ MOD (ENDLESS)
+    //  ENDLESS MODE
     // ════════════════════════════════════════
 
     isAllCompleted() {
@@ -333,16 +333,16 @@ class LevelManager {
     }
 
     /**
-     * Sonsuz modu başlat
-     * Timer yok, wave sistemi, sürekli hızlanan
+     * Start endless mode
+     * No timer, wave system, continuously accelerating
      */
     startEndless() {
         this.endlessMode = true;
         this.currentLevelIndex = -1;
         this.currentLevel = {
             id: 999,
-            name: 'SONSUZ_MOD',
-            desc: 'Sistemde kalıcı savunma — dayanabildiğin kadar dayan',
+            name: 'ENDLESS_MODE',
+            desc: 'Permanent defense — survive as long as you can',
             barSpeed: 0.6,
             targetSize: 0.24,
             requiredHits: Infinity,
@@ -366,7 +366,7 @@ class LevelManager {
         this.timer = Infinity;
         this.usedRevive = false;
 
-        // Wave sistemi
+        // Wave system
         this.endlessWave = 1;
         this.endlessHitsInWave = 0;
         this.endlessHitsPerWave = 5;
@@ -379,7 +379,7 @@ class LevelManager {
     }
 
     /**
-     * Sonsuz modda hit — wave sistemi ile zorluk artışı
+     * Endless mode hit — difficulty increases with wave system
      */
     hitEndless() {
         if (!this.currentLevel || this.levelFailed) return;
@@ -406,7 +406,7 @@ class LevelManager {
             this.endlessHitsInWave++;
             if (this.combo > this.maxCombo) this.maxCombo = this.combo;
 
-            // Wave ilerlemesi
+            // Wave progression
             if (this.endlessHitsInWave >= this.endlessHitsPerWave) {
                 this.endlessWave++;
                 this.endlessHitsInWave = 0;
@@ -428,29 +428,29 @@ class LevelManager {
 
         this.hitAnimTimer = 0.5;
         this._generateTargetZone();
-        // Küçük hız artışı her hit'te
+        // Small speed increase per hit
         this.barSpeed = Math.min(this.barSpeed + 0.008, 4.0);
     }
 
     /**
-     * Wave geçildiğinde zorluk artır
+     * Increase difficulty on wave completion
      */
     _endlessScaleUp() {
-        // Hedef küçülsün
+        // Shrink target
         this.currentLevel.targetSize = Math.max(this.currentLevel.targetSize - 0.012, 0.05);
-        // Hız artsın
+        // Increase speed
         this.currentLevel.barSpeed = Math.min(this.currentLevel.barSpeed + 0.15, 4.0);
         this.barSpeed = this.currentLevel.barSpeed;
-        // Lockpick zorluğu
+        // Lockpick difficulty
         this.currentLevel.lockpickDiff = Math.min(this.endlessWave, 6);
-        // Bonus can (her 3 wave'de)
+        // Bonus life (every 3 waves)
         if (this.endlessWave % 3 === 0) {
             this.lives = Math.min(this.lives + 1, 5);
         }
     }
 
     /**
-     * Sonsuz mod update — timer yok, sadece bar ve parçacıklar
+     * Endless mode update — no timer, only bar and particles
      */
     updateEndless(dt) {
         if (!this.currentLevel || this.levelFailed) return;
@@ -471,7 +471,7 @@ class LevelManager {
             this.endlessWaveFlash -= dt * 2;
         }
 
-        // Parçacıklar
+        // Particles
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             p.x += p.vx * dt;
@@ -483,7 +483,7 @@ class LevelManager {
     }
 
     /**
-     * Sonsuz mod render — wave bilgisi göster
+     * Endless mode render — show wave info
      */
     renderEndless(ctx, W, H) {
         if (!this.currentLevel) return;
@@ -493,13 +493,13 @@ class LevelManager {
         const barW = W * 0.76;
         const barH = 12;
 
-        // Bar arkaplan
+        // Bar background
         ctx.save();
         ctx.fillStyle = 'rgba(30,41,59,0.6)';
         Utils.roundRect(ctx, barX, barY - barH / 2, barW, barH, 6);
         ctx.fill();
 
-        // Hedef bölge
+        // Target zone
         const zoneX = barX + this.targetZoneStart * barW;
         const zoneW = (this.targetZoneEnd - this.targetZoneStart) * barW;
         ctx.fillStyle = 'rgba(34,197,94,0.2)';
@@ -509,7 +509,7 @@ class LevelManager {
         ctx.fill();
         ctx.stroke();
 
-        // Gösterge
+        // Indicator
         const ix = barX + this.barPosition * barW;
         ctx.strokeStyle = '#f59e0b';
         ctx.lineWidth = 2.5;
@@ -518,7 +518,7 @@ class LevelManager {
         ctx.lineTo(ix, barY + barH + 2);
         ctx.stroke();
 
-        // Gösterge üçgen
+        // Indicator triangle
         ctx.fillStyle = '#f59e0b';
         ctx.beginPath();
         ctx.moveTo(ix, barY - barH - 2);
@@ -529,7 +529,7 @@ class LevelManager {
 
         ctx.restore();
 
-        // Hit sonuç yazısı
+        // Hit result text
         if (this.lastHitResult) {
             const labels = {
                 perfect: { text: 'PERFECT', color: '#22c55e' },
@@ -547,7 +547,7 @@ class LevelManager {
             ctx.restore();
         }
 
-        // Parçacıklar
+        // Particles
         for (const p of this.particles) {
             ctx.save();
             ctx.globalAlpha = p.life;
@@ -583,9 +583,9 @@ class LevelManager {
         // Desc
         ctx.fillStyle = '#64748b';
         ctx.font = '400 13px Rajdhani';
-        ctx.fillText('∞ SONSUZ MOD — Dayanabildiğin kadar dayan', W / 2, 90);
+        ctx.fillText('∞ ENDLESS MODE — Survive as long as you can', W / 2, 90);
 
-        // Wave ilerleme barı
+        // Wave progress bar
         const progW = 120;
         const progH = 4;
         const progX = W / 2 - progW / 2;
@@ -603,7 +603,7 @@ class LevelManager {
         ctx.font = '400 10px Rajdhani';
         ctx.fillText(`${this.endlessHitsInWave}/${this.endlessHitsPerWave}`, W / 2, progY + 16);
 
-        // Canlar (solda)
+        // Lives (solda)
         ctx.textAlign = 'right';
         ctx.font = '18px sans-serif';
         for (let i = 0; i < Math.max(this.lives, 3); i++) {
@@ -616,7 +616,7 @@ class LevelManager {
             ctx.fillStyle = '#475569';
             ctx.font = '400 12px Rajdhani';
             ctx.textAlign = 'right';
-            ctx.fillText(`EN İYİ: ${this.endlessBest}`, W - 16, 100);
+            ctx.fillText(`BEST: ${this.endlessBest}`, W - 16, 100);
         }
 
         ctx.restore();

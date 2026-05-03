@@ -1,6 +1,6 @@
 /* =========================================
-   UIManager.js — UI Çizim Yardımcısı
-   Basit, beta görünüm
+   UIManager.js — UI Drawing Helper
+   Simple, beta appearance
    ========================================= */
 
 class UIManager {
@@ -12,7 +12,7 @@ class UIManager {
         this.mouseY = 0;
     }
 
-    // ── Buton sistemi ──
+    // ── Button system ──
 
     addButton(id, label, x, y, w, h, onClick, style = {}) {
         this.buttons.push({
@@ -62,7 +62,7 @@ class UIManager {
             ctx.save();
             ctx.globalAlpha = alpha;
 
-            // Arka plan — CG: Shape rendering
+            // Background — CG: Shape rendering
             const bgAlpha = hovered ? 0.2 : 0.08;
             ctx.fillStyle = btn.disabled ? 'rgba(100,100,100,0.1)' : `rgba(59,130,246,${bgAlpha})`;
             ctx.strokeStyle = btn.color;
@@ -79,7 +79,7 @@ class UIManager {
             ctx.textBaseline = 'middle';
             ctx.fillText(btn.label, btn.x, hasSubtitle ? btn.y - 7 : btn.y + 1);
 
-            // Subtitle (varsa)
+            // Subtitle (if any)
             if (hasSubtitle) {
                 ctx.fillStyle = '#64748b';
                 ctx.font = '400 11px Rajdhani';
@@ -106,9 +106,9 @@ class UIManager {
         ctx.font = '500 12px Rajdhani';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText('ENERJİ', x - 8, y + cellH / 2);
+        ctx.fillText('ENERGY', x - 8, y + cellH / 2);
 
-        // Hücreler
+        // Cells
         for (let i = 0; i < energy.max; i++) {
             const cx = x + i * (cellW + gap);
             const filled = i < energy.current;

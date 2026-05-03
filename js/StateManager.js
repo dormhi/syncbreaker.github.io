@@ -18,7 +18,7 @@ class StateManager {
         this.previousState = null;
         this._handlers = {};
 
-        // Geçiş
+        // Transition
         this.transitioning = false;
         this.transitionProgress = 0;
         this.transitionDuration = 0.3;

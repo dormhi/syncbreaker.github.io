@@ -1,5 +1,5 @@
 /* =========================================
-   utils.js — Yardımcı fonksiyonlar
+   utils.js — Utility functions
    ========================================= */
 
 const Utils = {
@@ -38,7 +38,7 @@ const Utils = {
             : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
     },
 
-    // Canvas yardımcılar
+    // Canvas helpers
     roundRect(ctx, x, y, w, h, r) {
         ctx.beginPath();
         ctx.moveTo(x + r, y);

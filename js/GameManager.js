@@ -1,6 +1,6 @@
 /* =========================================
-   GameManager.js — Ana Oyun Yöneticisi
-   Tüm state handler'ları ve koordinasyon
+   GameManager.js — Main Game Manager
+   All state handlers and coordination
    ========================================= */
 
 class GameManager {
@@ -8,19 +8,19 @@ class GameManager {
         this.canvas = canvas;
         this.ctx = ctx;
 
-        // Alt sistemler
+        // Subsystems
         this.state = new StateManager();
         this.energy = new EnergySystem();
         this.ui = new UIManager(ctx, canvas);
         this.lockpick = new LockpickSystem();
         this.levels = new LevelManager();
 
-        // Arka plan efektleri — CG: Animation + Rendering
+        // Background effects — CG: Animation + Rendering
         this.bgTime = 0;
         this.bgParticles = this._createBgParticles(35);
         this.dataRain = this._createDataRain(20);
 
-        // State handler'ları kaydet
+        // Register state handlers
         this._registerStates();
 
         // Input
@@ -41,10 +41,10 @@ class GameManager {
         const W = this.canvas.width;
         const H = this.canvas.height;
 
-        // Temizle
+        // Clear
         ctx.clearRect(0, 0, W, H);
 
-        // Arkaplan — CG: Gradient rendering
+        // Background — CG: Gradient rendering
         this._renderBackground(ctx, W, H);
 
         // State render
@@ -52,7 +52,7 @@ class GameManager {
     }
 
     // ════════════════════════════════════════
-    //  STATE HANDLER KAYITLARI
+    //  STATE HANDLER REGISTRATIONS
     // ════════════════════════════════════════
 
     _registerStates() {
@@ -63,7 +63,7 @@ class GameManager {
             enter: () => {
                 this.ui.clearButtons();
                 const cx = this.canvas.width / 2;
-                this.ui.addButton('start', '▶  GÖREVE BAŞLA', cx, 520, 240, 48,
+                this.ui.addButton('start', '▶  START MISSION', cx, 520, 240, 48,
                     () => this.state.change(S.HUB));
             },
             render: (ctx) => {
@@ -71,24 +71,24 @@ class GameManager {
                 const H = this.canvas.height;
                 const cx = W / 2;
 
-                // Başlık
+                // Title
                 ctx.fillStyle = '#e2e8f0';
                 ctx.font = '900 40px Orbitron';
                 ctx.textAlign = 'center';
                 ctx.fillText('SYNCBREAKER', cx, 70);
 
-                // Alt başlık
+                // Subtitle
                 ctx.fillStyle = '#ef4444';
                 ctx.font = '600 15px Rajdhani';
-                ctx.fillText('⚠ SİBER SAVUNMA PROTOKOLÜ ⚠', cx, 100);
+                ctx.fillText('⚠ CYBER DEFENSE PROTOCOL ⚠', cx, 100);
 
-                // Hikaye paneli
+                // Story panel
                 const panelX = cx - 320;
                 const panelY = 130;
                 const panelW = 640;
                 const panelH = 350;
 
-                // Panel arka plan
+                // Panel background
                 ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
                 ctx.strokeStyle = '#1e293b';
                 ctx.lineWidth = 1;
@@ -96,34 +96,34 @@ class GameManager {
                 ctx.fill();
                 ctx.stroke();
 
-                // Terminal başlığı
+                // Terminal header
                 ctx.fillStyle = '#ef4444';
                 ctx.font = '700 14px Orbitron';
                 ctx.textAlign = 'left';
-                ctx.fillText('> DURUM RAPORU', panelX + 20, panelY + 30);
+                ctx.fillText('> STATUS REPORT', panelX + 20, panelY + 30);
 
-                // Terminal çizgisi
+                // Terminal line
                 ctx.strokeStyle = '#1e293b';
                 ctx.beginPath();
                 ctx.moveTo(panelX + 15, panelY + 42);
                 ctx.lineTo(panelX + panelW - 15, panelY + 42);
                 ctx.stroke();
 
-                // Hikaye metni
+                // Story text
                 const lines = [
-                    { text: '[UYARI] Sisteminiz siber saldırı altında!', color: '#ef4444', bold: true },
+                    { text: '[WARNING] Your system is under cyber attack!', color: '#ef4444', bold: true },
                     { text: '', color: '' },
-                    { text: 'Kimliği belirsiz bir saldırgan, ağ altyapınıza sızdı.', color: '#e2e8f0' },
-                    { text: 'Kritik sistem dosyalarına zararlı kod enjekte edildi.', color: '#e2e8f0' },
-                    { text: 'Saldırgan hâlâ sistemde aktif ve yayılmaya devam ediyor.', color: '#f59e0b' },
+                    { text: 'An unknown attacker has infiltrated your network.', color: '#e2e8f0' },
+                    { text: 'Malicious code has been injected into critical system files.', color: '#e2e8f0' },
+                    { text: 'The attacker is still active and spreading.', color: '#f59e0b' },
                     { text: '', color: '' },
-                    { text: '> GÖREVİNİZ:', color: '#3b82f6', bold: true },
-                    { text: 'Her bir enfekte düğüme erişin ve zararlı veriyi temizleyin.', color: '#e2e8f0' },
-                    { text: 'Kilitli düğümlere erişmek için şifre kırıcıyı (lockpick) kullanın.', color: '#e2e8f0' },
-                    { text: 'Başarısız olursanız, kurtarma protokolünü devreye alabilirsiniz.', color: '#e2e8f0' },
+                    { text: '> YOUR MISSION:', color: '#3b82f6', bold: true },
+                    { text: 'Access each infected node and clean the malicious data.', color: '#e2e8f0' },
+                    { text: 'Use the code breaker (lockpick) to access locked nodes.', color: '#e2e8f0' },
+                    { text: 'If you fail, you can activate the recovery protocol.', color: '#e2e8f0' },
                     { text: '', color: '' },
-                    { text: '> DİKKAT: Enerji kaynakları sınırlı. Her operasyon hak tüketir.', color: '#f59e0b' },
-                    { text: '  Sistemi tamamen temizlemeden durmayin!', color: '#64748b' },
+                    { text: '> CAUTION: Energy resources are limited. Each operation costs charges.', color: '#f59e0b' },
+                    { text: '  Do not stop until the system is fully cleansed!', color: '#64748b' },
                 ];
 
                 let lineY = panelY + 65;
@@ -140,7 +140,7 @@ class GameManager {
                 // Buton
                 this.ui.renderButtons();
 
-                // Versiyon
+                // Version
                 ctx.fillStyle = 'rgba(100,116,139,0.4)';
                 ctx.font = '300 12px Rajdhani';
                 ctx.textAlign = 'center';
@@ -152,7 +152,7 @@ class GameManager {
             }
         });
 
-        // ── HUB (Level Seçimi) ──
+        // ── HUB (Level Selection) ──
         this.state.register(S.HUB, {
             enter: () => {
                 this.ui.clearButtons();
@@ -162,34 +162,34 @@ class GameManager {
                 const W = this.canvas.width;
                 const H = this.canvas.height;
 
-                // Başlık
+                // Title
                 ctx.fillStyle = '#e2e8f0';
                 ctx.font = '700 22px Orbitron';
                 ctx.textAlign = 'center';
-                ctx.fillText('ENFEKTe DÜĞÜMLER', W / 2, 38);
+                ctx.fillText('INFECTED NODES', W / 2, 38);
 
                 ctx.fillStyle = '#64748b';
                 ctx.font = '400 13px Rajdhani';
-                ctx.fillText('Temizlenecek sistem düğümlerini seçin', W / 2, 58);
+                ctx.fillText('Select system nodes to clean', W / 2, 58);
 
-                // Enerji
+                // Energy
                 this.ui.renderEnergyBar({
                     current: this.energy.currentEnergy,
                     max: this.energy.maxEnergy,
                     nextRegenIn: this.energy.getTimeToNextRegen()
                 });
 
-                // Ağ topolojisi bağlantıları — CG: Line rendering
+                // Network topology connections — CG: Line rendering
                 this._renderHubConnections(ctx);
 
-                // Butonlar
+                // Buttons
                 this.ui.renderButtons();
 
-                // Alt bilgi
+                // Footer info
                 ctx.fillStyle = '#475569';
                 ctx.font = '400 13px Rajdhani';
                 ctx.textAlign = 'center';
-                ctx.fillText('🔒 Kilitli düğümlere erişmek için şifre kırıcı kullan (2 enerji)', W / 2, H - 16);
+                ctx.fillText('🔒 Use code breaker to access locked nodes (2 energy)', W / 2, H - 16);
             },
             exit: () => this.ui.clearButtons(),
             onKey: (e) => {
@@ -234,10 +234,10 @@ class GameManager {
                     ctx.fillStyle = '#22c55e';
                     ctx.font = '900 32px Orbitron';
                     ctx.textAlign = 'center';
-                    ctx.fillText('DÜĞÜM TEMİZLENDİ!', W / 2, H / 2 - 70);
+                    ctx.fillText('NODE CLEANED!', W / 2, H / 2 - 70);
                     ctx.fillStyle = '#64748b';
                     ctx.font = '500 18px Rajdhani';
-                    ctx.fillText(`Skor: ${this.levels.score} | Max Combo: x${this.levels.maxCombo}`, W / 2, H / 2 - 35);
+                    ctx.fillText(`Score: ${this.levels.score} | Max Combo: x${this.levels.maxCombo}`, W / 2, H / 2 - 35);
                 }
             },
             exit: () => this.ui.clearButtons(),
@@ -278,7 +278,7 @@ class GameManager {
                             this.levels.usedRevive = true;
                             this.state.change(S.LEVEL);
                         } else if (this._lockpickReason === 'endless_revive') {
-                            // Sonsuz modda kaldığı yerden devam — 1 can
+                            // Continue from where left off in endless — 1 life
                             this.levels.lives = 1;
                             this.levels.levelFailed = false;
                             this.state.change(S.ENDLESS);
@@ -308,12 +308,12 @@ class GameManager {
                 const W = this.canvas.width;
                 const H = this.canvas.height;
 
-                // Başlık
+                // Title
                 const isRevive = this._lockpickReason === 'revive' || this._lockpickReason === 'endless_revive';
-                const title = isRevive ? 'KURTARMA PROTOKOLÜ' : 'ŞİFRE KIRICI';
+                const title = isRevive ? 'RECOVERY PROTOCOL' : 'CODE BREAKER';
                 const subtitle = isRevive
-                    ? 'Bağlantıyı yeniden kurmak için şifreyi kır'
-                    : 'Kilitli düğüme erişmek için güvenlik şifresini kır';
+                    ? 'Break the code to restore the connection'
+                    : 'Break the security code to access the locked node';
                 ctx.fillStyle = '#f59e0b';
                 ctx.font = '700 22px Orbitron';
                 ctx.textAlign = 'center';
@@ -322,18 +322,18 @@ class GameManager {
                 ctx.font = '400 13px Rajdhani';
                 ctx.fillText(subtitle, W / 2, 60);
 
-                // Talimat
+                // Instructions
                 ctx.fillStyle = '#64748b';
                 ctx.font = '400 14px Rajdhani';
                 const hint = this.lockpick.started
-                    ? 'Cursor node\'a geldiğinde doğru ok tuşuna bas!'
-                    : 'Başlamak için herhangi bir ok tuşuna (↑↓←→) veya WASD bas';
+                    ? 'Press the correct arrow key when cursor reaches a node!'
+                    : 'Press any arrow key (↑↓←→) or WASD to start';
                 ctx.fillText(hint, W / 2, 70);
 
                 // Lockpick
                 this.lockpick.render(ctx, W / 2, H / 2 + 10);
 
-                // Enerji
+                // Energy
                 this.ui.renderEnergyBar({
                     current: this.energy.currentEnergy,
                     max: this.energy.maxEnergy,
@@ -359,10 +359,10 @@ class GameManager {
                 this._noRevive = lCtx.noRevive || false;
                 this._usedRevive = lCtx.usedRevive || false;
 
-                // Revive butonu: enerji varsa VE bu level'da henüz revive kullanmadıysa
+                // Revive button: if energy available AND revive not yet used on this level
                 if (!this._noRevive && !this._usedRevive && this.energy.canAfford('REVIVE')) {
                     const level = this.levels.levels[this._goLevelIndex];
-                    this.ui.addButton('revive', '🔄 KURTARMA PROTOKOLÜ (1⚡)', cx, cy + 30, 290, 42,
+                    this.ui.addButton('revive', '🔄 RECOVERY PROTOCOL (1⚡)', cx, cy + 30, 290, 42,
                         () => {
                             if (this.energy.spend('REVIVE')) {
                                 this.state.change(S.LOCKPICK, {
@@ -377,8 +377,8 @@ class GameManager {
                     );
                 }
 
-                // Tekrar dene
-                this.ui.addButton('retry', '↻ YENİDEN DENE', cx, cy + 85, 200, 40,
+                // Retry
+                this.ui.addButton('retry', '↻ RETRY', cx, cy + 85, 200, 40,
                     () => {
                         this.levels.startLevel(this._goLevelIndex);
                         this.state.change(S.LEVEL);
@@ -386,8 +386,8 @@ class GameManager {
                     { color: '#3b82f6' }
                 );
 
-                // Hub'a dön
-                this.ui.addButton('hub', '← DÜĞÜM SEÇİMİ', cx, cy + 135, 200, 40,
+                // Back to hub
+                this.ui.addButton('hub', '← NODE SELECT', cx, cy + 135, 200, 40,
                     () => this.state.change(S.HUB),
                     { color: '#64748b' }
                 );
@@ -401,20 +401,20 @@ class GameManager {
                 ctx.fillStyle = '#ef4444';
                 ctx.font = '900 28px Orbitron';
                 ctx.textAlign = 'center';
-                ctx.fillText('OPERASYON BAŞARISIZ', cx, cy - 60);
+                ctx.fillText('OPERATION FAILED', cx, cy - 60);
 
                 ctx.fillStyle = '#64748b';
                 ctx.font = '500 18px Rajdhani';
-                ctx.fillText(`Skor: ${this._goScore}`, cx, cy - 25);
+                ctx.fillText(`Score: ${this._goScore}`, cx, cy - 25);
 
                 if (this._noRevive) {
                     ctx.fillStyle = '#ef4444';
                     ctx.font = '400 14px Rajdhani';
-                    ctx.fillText('Kurtarma protokolü başarısız oldu', cx, cy);
+                    ctx.fillText('Recovery protocol failed', cx, cy);
                 } else if (this._usedRevive) {
                     ctx.fillStyle = '#f59e0b';
                     ctx.font = '400 14px Rajdhani';
-                    ctx.fillText('Bu düğümde kurtarma hakkı zaten kullanıldı', cx, cy);
+                    ctx.fillText('Recovery already used on this node', cx, cy);
                 }
 
                 this.ui.renderButtons();
@@ -429,7 +429,7 @@ class GameManager {
         this.state.register(S.ENDLESS, {
             enter: () => {
                 this.ui.clearButtons();
-                // Revive'dan dönüyorsa sıfırlamadan devam et
+                // If returning from revive, continue without reset
                 if (!this.levels.endlessMode) {
                     this.levels.startEndless();
                 }
@@ -483,10 +483,10 @@ class GameManager {
                 this._eoHitCount = lCtx.hitCount || 0;
                 this._eoNoRevive = lCtx.noRevive || false;
 
-                // Sonsuz modda revive — enerji oldukça sınırsız!
+                // Endless mode revive — unlimited as long as energy lasts!
                 if (!this._eoNoRevive && this.energy.canAfford('REVIVE')) {
                     const lockDiff = Math.min(this._eoWave, 6);
-                    this.ui.addButton('revive', '🔄 KURTARMA PROTOKOLÜ (1⚡)', cx, cy + 50, 290, 42,
+                    this.ui.addButton('revive', '🔄 RECOVERY PROTOCOL (1⚡)', cx, cy + 50, 290, 42,
                         () => {
                             if (this.energy.spend('REVIVE')) {
                                 this.state.change(S.LOCKPICK, {
@@ -503,8 +503,8 @@ class GameManager {
                     );
                 }
 
-                // Yeniden başlat
-                this.ui.addButton('restart', '↻ YENİDEN BAŞLA', cx, cy + 105, 200, 40,
+                // Restart
+                this.ui.addButton('restart', '↻ RESTART', cx, cy + 105, 200, 40,
                     () => {
                         this.levels.endlessMode = false;
                         this.state.change(S.ENDLESS);
@@ -512,8 +512,8 @@ class GameManager {
                     { color: '#3b82f6' }
                 );
 
-                // Hub'a dön
-                this.ui.addButton('hub', '← DÜĞÜM SEÇİMİ', cx, cy + 155, 200, 40,
+                // Back to hub
+                this.ui.addButton('hub', '← NODE SELECT', cx, cy + 155, 200, 40,
                     () => {
                         this.levels.endlessMode = false;
                         this.state.change(S.HUB);
@@ -530,7 +530,7 @@ class GameManager {
                 ctx.fillStyle = '#ef4444';
                 ctx.font = '900 26px Orbitron';
                 ctx.textAlign = 'center';
-                ctx.fillText('SAVUNMA ÇÖKTÜ', cx, cy - 80);
+                ctx.fillText('DEFENSE COLLAPSED', cx, cy - 80);
 
                 ctx.fillStyle = '#e2e8f0';
                 ctx.font = '700 32px Orbitron';
@@ -545,17 +545,17 @@ class GameManager {
                 if (this._eoScore >= best && best > 0) {
                     ctx.fillStyle = '#f59e0b';
                     ctx.font = '600 14px Rajdhani';
-                    ctx.fillText('🏆 YENİ REKOR!', cx, cy + 15);
+                    ctx.fillText('🏆 NEW RECORD!', cx, cy + 15);
                 } else if (best > 0) {
                     ctx.fillStyle = '#475569';
                     ctx.font = '400 13px Rajdhani';
-                    ctx.fillText(`En iyi: ${best}`, cx, cy + 15);
+                    ctx.fillText(`Best: ${best}`, cx, cy + 15);
                 }
 
                 if (this._eoNoRevive) {
                     ctx.fillStyle = '#ef4444';
                     ctx.font = '400 13px Rajdhani';
-                    ctx.fillText('Kurtarma protokolü başarısız', cx, cy + 32);
+                    ctx.fillText('Recovery protocol failed', cx, cy + 32);
                 }
 
                 this.ui.renderButtons();
@@ -566,12 +566,12 @@ class GameManager {
             }
         });
 
-        // İlk state'e gir
+        // Enter initial state
         const menuH = this.state._handlers[S.MENU];
         if (menuH) menuH.enter();
     }
 
-    // ── HUB Butonları ──
+    // ── HUB Buttons ──
 
     _buildHubButtons() {
         const W = this.canvas.width;
@@ -586,7 +586,7 @@ class GameManager {
         const startX = (W - totalW) / 2 + btnW / 2;
         const startY = 120;
 
-        // Pozisyonları kaydet (topoloji çizgileri için)
+        // Save positions (for topology lines)
         this._hubPositions = [];
 
         for (let i = 0; i < levels.length; i++) {
@@ -627,39 +627,39 @@ class GameManager {
             }
         }
 
-        // Sonsuz Mod butonu
+        // Endless Mode button
         const allDone = this.levels.isAllCompleted();
         const endlessY = startY + 2 * (btnH + gapY) + btnH / 2 + 30;
         if (allDone) {
             const bestScore = this.levels._loadEndlessBest();
-            const endlessSubtitle = bestScore > 0 ? `En iyi: ${bestScore}` : 'Sınırsız zorluk, sınırsız eğlence';
-            this.ui.addButton('endless', '∞ SONSUZ MOD', W / 2, endlessY, 240, 50,
+            const endlessSubtitle = bestScore > 0 ? `Best: ${bestScore}` : 'Unlimited challenge, unlimited fun';
+            this.ui.addButton('endless', '∞ ENDLESS MODE', W / 2, endlessY, 240, 50,
                 () => this.state.change(this.state.STATES.ENDLESS),
                 { color: '#f59e0b', subtitle: endlessSubtitle }
             );
         } else {
             const remaining = this.levels.levels.filter(l => !l.completed).length;
-            this.ui.addButton('endless', `🔒 SONSUZ MOD`, W / 2, endlessY, 240, 50,
+            this.ui.addButton('endless', `🔒 ENDLESS MODE`, W / 2, endlessY, 240, 50,
                 () => {},
-                { color: '#475569', disabled: true, subtitle: `${remaining} düğüm kaldı` }
+                { color: '#475569', disabled: true, subtitle: `${remaining} nodes remaining` }
             );
         }
 
-        // Menüye dön
-        this.ui.addButton('menu', '← MENÜ', 70, H - 35, 100, 32,
+        // Back to menu
+        this.ui.addButton('menu', '← MENU', 70, H - 35, 100, 32,
             () => this.state.change(this.state.STATES.MENU),
             { color: '#475569' }
         );
 
-        // Verileri Sıfırla
-        this.ui.addButton('reset', '🗑 SIFIRLA', W - 75, H - 35, 110, 32,
+        // Reset Data
+        this.ui.addButton('reset', '🗑 RESET', W - 75, H - 35, 110, 32,
             () => {
                 console.log("SIFIRLA BUTONUNA BASILDI");
-                if (window.confirm('Tüm sistem verilerini silip sıfırdan başlamak istediğine emin misin?')) {
+                if (window.confirm('Are you sure you want to delete all data and start fresh?')) {
                     console.log("ONAY VERILDI, VERILER SILINIYOR...");
                     localStorage.removeItem('sb_progress');
                     localStorage.removeItem('sb_energy');
-                    window.location.href = window.location.href; // Mobil Tarayıcılar / Live Server için garantili reload
+                    window.location.href = window.location.href; // Guaranteed reload for mobile browsers / Live Server
                 }
             },
             { color: '#ef4444' }
@@ -675,17 +675,17 @@ class GameManager {
             const b = this._hubPositions[i + 1];
             const completed = a.level.completed;
 
-            // Çizgi rengi: tamamlanmış → yeşil, açık → mavi, kilitli → gri
+            // Line color: completed → green, unlocked → blue, locked → gray
             ctx.strokeStyle = completed ? 'rgba(34,197,94,0.3)' : 'rgba(71,85,105,0.15)';
             ctx.lineWidth = completed ? 2 : 1;
 
-            // Bağlantı çizgisi (buton kenarından kenarına)
+            // Connection line (edge to edge)
             ctx.beginPath();
             ctx.moveTo(a.x + a.w * 0.4, a.y);
             ctx.lineTo(b.x - b.w * 0.4, b.y);
             ctx.stroke();
 
-            // Bağlantı noktası (ortada küçük dot)
+            // Connection point (small dot in center)
             if (completed) {
                 const mx = (a.x + b.x) / 2;
                 const my = (a.y + b.y) / 2;
@@ -728,8 +728,8 @@ class GameManager {
     }
 
     // ════════════════════════════════════════
-    //  ARKA PLAN EFEKTLERİ
-    //  CG Kavramları: Animation, Transformation,
+    //  BACKGROUND EFFECTS
+    //  CG Concepts: Animation, Transformation,
     //  Gradient Rendering, Particle Systems
     // ════════════════════════════════════════
 

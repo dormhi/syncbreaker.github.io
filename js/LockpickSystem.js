@@ -1,48 +1,48 @@
 /* =========================================
-   LockpickSystem.js — Lockpick Mekaniği
-   lockpick-trainer (NoPixel 4.0) tarzı
+   LockpickSystem.js — Lockpick Mechanic
+   lockpick-trainer (NoPixel 4.0) style
    
-   MEKANİK:
-   - Daire üzerinde N adet node (düğüm)
-   - Her node'da bir ok yönü (↑↓←→)
-   - Beyaz bir işaretçi (cursor) daire üzerinde döner
-   - İşaretçi bir node'a geldiğinde doğru ok tuşuna basılmalı
-   - Doğru → o node yeşil olur, sıradaki node'a geç
-   - Yanlış tuş veya geç kalma → FAIL
-   - Tüm node'lar tamamlanınca → SUCCESS
+   MECHANIC:
+   - N nodes placed on a circle
+   - Each node has an arrow direction (↑↓←→)
+   - A white cursor rotates on the circle
+   - Press correct arrow key when cursor reaches a node
+   - Correct → node turns green, move to next
+   - Wrong key or too late → FAIL
+   - All nodes completed → SUCCESS
    
-   AKIŞ:
-   1. start() → waiting durumu (cursor duruyor)
-   2. İlk tuşa basılınca → started (cursor dönmeye başlar)
-   3. Sonuç → result gösterilir → callback çağrılır
+   FLOW:
+   1. start() → waiting state (cursor stopped)
+   2. First keypress → started (cursor begins rotating)
+   3. Result → shown on screen → callback invoked
    ========================================= */
 
 class LockpickSystem {
     constructor() {
-        // Oyun durumu
+        // Game state
         this.active = false;
-        this.started = false;       // İlk tuşa basıldı mı
+        this.started = false;       // Was first key pressed
         this.result = null;         // 'success' | 'fail' | null
-        this.finished = false;      // Callback çağrıldı mı
+        this.finished = false;      // Was callback invoked
         this.onComplete = null;
 
-        // Node'lar
+        // Nodes
         this.nodes = [];
         this.currentNodeIndex = 0;
 
-        // İşaretçi (cursor)
+        // Cursor
         this.cursorAngle = 0;
         this.cursorSpeed = 90;
 
-        // Zorluk
+        // Difficulty
         this.difficulty = 1;
         this.hitTolerance = 25;
 
-        // Sonuç gösterme
+        // Result display
         this.resultTimer = 0;
         this.resultDuration = 1.5;
 
-        // Ok yönleri
+        // Arrow directions
         this.DIRECTIONS = ['up', 'down', 'left', 'right'];
         this.DIR_KEYS = {
             up: ['ArrowUp', 'KeyW'],
@@ -59,21 +59,21 @@ class LockpickSystem {
     }
 
     /**
-     * Lockpick oturumunu başlat
+     * Start lockpick session
      */
     start(difficulty, onComplete) {
         this.difficulty = Utils.clamp(difficulty, 1, 6);
         this.onComplete = onComplete;
         this.result = null;
         this.finished = false;
-        this.started = false;       // Bekle, ilk tuşa basılınca başlat
+        this.started = false;       // Wait, start on first keypress
         this.resultTimer = 0;
         this.currentNodeIndex = 0;
 
         this._configure();
         this._generateNodes();
 
-        // Cursor ilk node'dan biraz önce konumlan
+        // Position cursor slightly before first node
         const firstNodeAngle = this.nodes[0].angle;
         this.cursorAngle = (firstNodeAngle - 50 + 360) % 360;
 
@@ -109,12 +109,12 @@ class LockpickSystem {
     }
 
     /**
-     * Her frame güncelle
+     * Update every frame
      */
     update(dt) {
         if (!this.active) return;
 
-        // Sonuç gösteriliyor — timer say, sonra callback çağır
+        // Showing result — count timer, then invoke callback
         if (this.result !== null) {
             this.resultTimer += dt;
             if (this.resultTimer >= this.resultDuration && !this.finished) {
@@ -126,57 +126,57 @@ class LockpickSystem {
             return;
         }
 
-        // Henüz başlamadıysa cursor dönmesin
+        // Don't rotate cursor until started
         if (!this.started) return;
 
-        // Cursor'u döndür
+        // Rotate cursor
         this.cursorAngle = (this.cursorAngle + this.cursorSpeed * dt) % 360;
 
-        // Cursor aktif node'u geçti mi?
+        // Did cursor pass active node?
         this._checkMiss();
     }
 
     /**
-     * Tuş input'u
+     * Key input
      */
     handleKey(code) {
         if (!this.active || this.result !== null) return false;
 
-        // Geçerli bir yön tuşu mu kontrol et
+        // Check if valid direction key
         const isDirectionKey = Object.values(this.DIR_KEYS).some(keys => keys.includes(code));
         if (!isDirectionKey) return false;
 
-        // İlk tuşa basılınca sadece cursor'u başlat, node kontrolü yapma
+        // First keypress only starts cursor, no node check
         if (!this.started) {
             this.started = true;
-            return true; // Cursor dönmeye başlar, bu tuş sayılmaz
+            return true; // Cursor starts rotating, this key doesn't count
         }
 
         const currentNode = this.nodes[this.currentNodeIndex];
         if (!currentNode || currentNode.solved) return false;
 
-        // Cursor aktif node'un yakınında mı?
+        // Is cursor near active node?
         const dist = this._angleDist(this.cursorAngle, currentNode.angle);
         if (dist > this.hitTolerance) {
-            // Node yakınında değilken tuşa bastı → FAIL
+            // Pressed key while not near node → FAIL
             this._fail();
             return true;
         }
 
-        // Doğru tuş mu?
+        // Correct key?
         const validKeys = this.DIR_KEYS[currentNode.direction];
         if (validKeys.includes(code)) {
-            // DOĞRU!
+            // CORRECT!
             currentNode.solved = true;
             this.currentNodeIndex++;
 
-            // Hepsi çözüldü mü?
+            // All solved?
             if (this.currentNodeIndex >= this.nodes.length) {
                 this.result = 'success';
                 this.resultTimer = 0;
             }
         } else {
-            // Yanlış tuş → FAIL
+            // Wrong key → FAIL
             this._fail();
         }
 
@@ -228,9 +228,9 @@ class LockpickSystem {
         ctx.save();
         ctx.translate(cx, cy);
 
-        // 0. Dış dekoratif halka — CG: Rotation transformation
+        // 0. Outer decorative ring — CG: Rotation transformation
         ctx.save();
-        ctx.rotate(this.cursorAngle * Math.PI / 180 * 0.3); // Yavaş dönüş
+        ctx.rotate(this.cursorAngle * Math.PI / 180 * 0.3); // Slow rotation
         ctx.beginPath();
         ctx.arc(0, 0, radius + 18, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(59,130,246,0.06)';
@@ -240,7 +240,7 @@ class LockpickSystem {
         ctx.setLineDash([]);
         ctx.restore();
 
-        // 0b. İç dekoratif halka — CG: Counter-rotation
+        // 0b. Inner decorative ring — CG: Counter-rotation
         ctx.save();
         ctx.rotate(-this.cursorAngle * Math.PI / 180 * 0.5);
         ctx.beginPath();
@@ -259,13 +259,13 @@ class LockpickSystem {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 2. Bağlantı çizgileri
+        // 2. Connection lines
         this._drawConnections(ctx, radius);
 
         // 3. Merkez kilit
         this._drawLockIcon(ctx);
 
-        // 4. Node'lar
+        // 4. Nodes
         for (let i = 0; i < this.nodes.length; i++) {
             this._drawNode(ctx, this.nodes[i], i, radius, nodeSize);
         }
@@ -275,18 +275,18 @@ class LockpickSystem {
             this._drawCursor(ctx, radius);
         }
 
-        // 6. İlerleme barı
+        // 6. Progress bar
         this._drawProgressBar(ctx, radius);
 
-        // 7. "Başlamak için bir tuşa bas" yazısı
+        // 7. "Press a key to start" text
         if (!this.started && this.result === null) {
             ctx.fillStyle = '#64748b';
             ctx.font = '500 15px Rajdhani';
             ctx.textAlign = 'center';
-            ctx.fillText('Başlamak için ok tuşuna bas', 0, radius + 65);
+            ctx.fillText('Press an arrow key to start', 0, radius + 65);
         }
 
-        // 8. Sonuç yazısı
+        // 8. Result text
         if (this.result !== null) {
             this._drawResult(ctx, radius);
         }
@@ -381,7 +381,7 @@ class LockpickSystem {
         const cy = Math.sin(rad) * radius;
         const dotSize = 6;
 
-        // Merkezden çizgi
+        // Line from center
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(cx, cy);
@@ -395,7 +395,7 @@ class LockpickSystem {
         ctx.fillStyle = '#e2e8f0';
         ctx.fill();
 
-        // Dış halka
+        // Outer ring
         ctx.beginPath();
         ctx.arc(cx, cy, dotSize + 3, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(226,232,240,0.4)';
@@ -429,7 +429,7 @@ class LockpickSystem {
     _drawResult(ctx, radius) {
         const isSuccess = this.result === 'success';
         const color = isSuccess ? '#22c55e' : '#ef4444';
-        const text = isSuccess ? 'KİLİT AÇILDI' : 'BAŞARISIZ';
+        const text = isSuccess ? 'ACCESS GRANTED' : 'FAILED';
 
         ctx.fillStyle = color;
         ctx.font = '700 22px Orbitron';

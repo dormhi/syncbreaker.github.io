@@ -1,12 +1,12 @@
 /* =========================================
-   EnergySystem.js — Enerji/Hak Yönetimi
+   EnergySystem.js — Energy/Charge Management
    ========================================= */
 
 class EnergySystem {
     constructor() {
         this.maxEnergy = 5;
         this.currentEnergy = 5;
-        this.regenInterval = 5 * 60; // 5 dakika
+        this.regenInterval = 5 * 60; // 5 minutes
         this.regenTimer = 0;
 
         this.COSTS = Object.freeze({
