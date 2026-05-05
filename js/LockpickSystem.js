@@ -216,7 +216,7 @@ class LockpickSystem {
     }
 
     // ════════════════════════════════════════
-    //  RENDER
+    //  RENDER (Ekrana Çizim İşlemleri - CG)
     // ════════════════════════════════════════
 
     render(ctx, cx, cy) {
@@ -226,11 +226,13 @@ class LockpickSystem {
         const nodeSize = 32;
 
         ctx.save();
+        // Hocam burada işlem kolaylığı için ekranın merkez noktasını (origin) asıl çizim yapacağımız cx, cy noktasına taşıyoruz (Translation)
         ctx.translate(cx, cy);
 
-        // 0. Outer decorative ring — CG: Rotation transformation
+        // 0. Dış dekoratif halka — CG: Rotation transformation
         ctx.save();
-        ctx.rotate(this.cursorAngle * Math.PI / 180 * 0.3); // Slow rotation
+        // Halkanın dönme efekti için radyan cinsinden rotasyon uyguluyoruz
+        ctx.rotate(this.cursorAngle * Math.PI / 180 * 0.3); // Yavaş dönüş
         ctx.beginPath();
         ctx.arc(0, 0, radius + 18, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(59,130,246,0.06)';
@@ -238,10 +240,11 @@ class LockpickSystem {
         ctx.setLineDash([4, 12]);
         ctx.stroke();
         ctx.setLineDash([]);
-        ctx.restore();
+        ctx.restore(); // Her rotasyondan sonra State'i geri alıyoruz ki diğer objeler yamuk çizilmesin
 
-        // 0b. Inner decorative ring — CG: Counter-rotation
+        // 0b. İç dekoratif halka — CG: Counter-rotation
         ctx.save();
+        // Ters yöne dönmesi için rotasyon açısını eksi (-) yapıyoruz
         ctx.rotate(-this.cursorAngle * Math.PI / 180 * 0.5);
         ctx.beginPath();
         ctx.arc(0, 0, radius - 30, 0, Math.PI * 2);

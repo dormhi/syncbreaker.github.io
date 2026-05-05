@@ -654,9 +654,9 @@ class GameManager {
         // Reset Data
         this.ui.addButton('reset', '🗑 RESET', W - 75, H - 35, 110, 32,
             () => {
-                console.log("SIFIRLA BUTONUNA BASILDI");
+                console.log("Reset button clicked");
                 if (window.confirm('Are you sure you want to delete all data and start fresh?')) {
-                    console.log("ONAY VERILDI, VERILER SILINIYOR...");
+                    console.log("Reset confirmed, clearing data...");
                     localStorage.removeItem('sb_progress');
                     localStorage.removeItem('sb_energy');
                     window.location.href = window.location.href; // Guaranteed reload for mobile browsers / Live Server
@@ -728,8 +728,8 @@ class GameManager {
     }
 
     // ════════════════════════════════════════
-    //  BACKGROUND EFFECTS
-    //  CG Concepts: Animation, Transformation,
+    //  BACKGROUND EFFECTS & RENDERING
+    //  CG Concepts Implemented: Animation, Transformation,
     //  Gradient Rendering, Particle Systems
     // ════════════════════════════════════════
 
@@ -766,12 +766,16 @@ class GameManager {
 
     _updateBgParticles(dt) {
         for (const p of this.bgParticles) {
-            // CG: Translation + trigonometric movement
+            // CG: Translation + Trigonometric movement
+            // Calculate velocity vector using Cosine for X and Sine for Y axis translation
             p.x += Math.cos(p.angle) * p.speed * dt;
             p.y += Math.sin(p.angle) * p.speed * dt;
+            
+            // Add a slight random wobble to the particle's trajectory
             p.angle += Utils.randFloat(-0.3, 0.3) * dt;
 
-            // Wrap around — CG: coordinate wrapping
+            // CG: Coordinate Wrapping
+            // Seamlessly wrap particles across screen boundaries to maintain constant density
             if (p.x < -5) p.x = 965;
             if (p.x > 965) p.x = -5;
             if (p.y < -5) p.y = 645;
@@ -782,7 +786,10 @@ class GameManager {
     _updateDataRain(dt) {
         const chars = '01アイウエオカキクケコ⟡⟢⟣';
         for (const d of this.dataRain) {
+            // CG: Linear Translation (Y-axis only) for the Matrix digital rain effect
             d.y += d.speed * dt;
+            
+            // Reset position to top with a random character when it drops below the screen
             if (d.y > 660) {
                 d.y = Utils.randFloat(-60, -10);
                 d.x = Utils.randFloat(0, 960);

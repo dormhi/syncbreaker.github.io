@@ -4,7 +4,8 @@
 
 class StateManager {
     constructor() {
-        this.STATES = Object.freeze({
+        // Define the available application states
+        this.STATES = {
             MENU: 'MENU',
             HUB: 'HUB',
             LEVEL: 'LEVEL',
@@ -12,13 +13,13 @@ class StateManager {
             GAME_OVER: 'GAME_OVER',
             ENDLESS: 'ENDLESS',
             ENDLESS_OVER: 'ENDLESS_OVER'
-        });
+        };
 
         this.currentState = this.STATES.MENU;
         this.previousState = null;
         this._handlers = {};
 
-        // Transition
+        // State transition animation variables
         this.transitioning = false;
         this.transitionProgress = 0;
         this.transitionDuration = 0.3;
@@ -27,13 +28,14 @@ class StateManager {
         this.pendingContext = null;
     }
 
+    // Registers a state with its lifecycle hooks (enter, update, render, exit, onKey)
     register(state, handlers) {
         this._handlers[state] = {
-            enter: handlers.enter || (() => {}),
-            update: handlers.update || (() => {}),
-            render: handlers.render || (() => {}),
-            exit: handlers.exit || (() => {}),
-            onKey: handlers.onKey || (() => {})
+            enter: handlers.enter || function() {},
+            update: handlers.update || function() {},
+            render: handlers.render || function() {},
+            exit: handlers.exit || function() {},
+            onKey: handlers.onKey || function() {}
         };
     }
 

@@ -9,10 +9,11 @@ class EnergySystem {
         this.regenInterval = 5 * 60; // 5 minutes
         this.regenTimer = 0;
 
-        this.COSTS = Object.freeze({
+        // Define energy costs for different actions
+        this.COSTS = {
             REVIVE: 1,
             SHORTCUT: 2
-        });
+        };
 
         this._load();
     }
