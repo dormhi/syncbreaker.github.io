@@ -362,7 +362,7 @@ class GameManager {
                 // Revive button: if energy available AND revive not yet used on this level
                 if (!this._noRevive && !this._usedRevive && this.energy.canAfford('REVIVE')) {
                     const level = this.levels.levels[this._goLevelIndex];
-                    this.ui.addButton('revive', '🔄 RECOVERY PROTOCOL (1⚡)', cx, cy + 30, 290, 42,
+                    this.ui.addButton('revive', '🔄 TRY RECOVERY PROTOCOL (1⚡)', cx, cy + 30, 290, 42,
                         () => {
                             if (this.energy.spend('REVIVE')) {
                                 this.state.change(S.LOCKPICK, {
@@ -640,7 +640,7 @@ class GameManager {
         } else {
             const remaining = this.levels.levels.filter(l => !l.completed).length;
             this.ui.addButton('endless', `🔒 ENDLESS MODE`, W / 2, endlessY, 240, 50,
-                () => {},
+                () => { },
                 { color: '#475569', disabled: true, subtitle: `${remaining} nodes remaining` }
             );
         }
@@ -724,6 +724,64 @@ class GameManager {
             this.state.handleKey(e);
         });
 
+        // ── MOBILE TOUCH SUPPORT ──
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                
+                const rect = canvas.getBoundingClientRect();
+                const x = (touchStartX - rect.left) * (canvas.width / rect.width);
+                const y = (touchStartY - rect.top) * (canvas.height / rect.height);
+                
+                // 1. Oku tıklamaları UI butonları için
+                if (this.ui.handleClick(x, y)) {
+                    e.preventDefault();
+                    return;
+                }
+
+                // 2. Buton değilse SPACE say
+                const state = this.state.currentState;
+                const S = this.state.STATES;
+                
+                if (state === S.LEVEL || state === S.ENDLESS || state === S.MENU || state === S.GAME_OVER || state === S.ENDLESS_OVER) {
+                    e.preventDefault();
+                    this.state.handleKey({ code: 'Space', preventDefault: () => {} });
+                }
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (e.changedTouches.length > 0) {
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                
+                const dx = touchEndX - touchStartX;
+                const dy = touchEndY - touchStartY;
+                
+                // 3. Lockpick mini oyunu için swipe (kaydırma) algıla
+                if (this.state.currentState === this.state.STATES.LOCKPICK) {
+                    const threshold = 30; // Minimum kaydırma
+                    
+                    if (Math.abs(dx) > threshold || Math.abs(dy) > threshold) {
+                        e.preventDefault();
+                        if (Math.abs(dx) > Math.abs(dy)) {
+                            // Yatay
+                            if (dx > 0) this.state.handleKey({ code: 'ArrowRight', preventDefault: () => {} });
+                            else this.state.handleKey({ code: 'ArrowLeft', preventDefault: () => {} });
+                        } else {
+                            // Dikey
+                            if (dy > 0) this.state.handleKey({ code: 'ArrowDown', preventDefault: () => {} });
+                            else this.state.handleKey({ code: 'ArrowUp', preventDefault: () => {} });
+                        }
+                    }
+                }
+            }
+        }, { passive: false });
+
         canvas.style.cursor = 'pointer';
     }
 
@@ -770,7 +828,7 @@ class GameManager {
             // Calculate velocity vector using Cosine for X and Sine for Y axis translation
             p.x += Math.cos(p.angle) * p.speed * dt;
             p.y += Math.sin(p.angle) * p.speed * dt;
-            
+
             // Add a slight random wobble to the particle's trajectory
             p.angle += Utils.randFloat(-0.3, 0.3) * dt;
 
@@ -788,7 +846,7 @@ class GameManager {
         for (const d of this.dataRain) {
             // CG: Linear Translation (Y-axis only) for the Matrix digital rain effect
             d.y += d.speed * dt;
-            
+
             // Reset position to top with a random character when it drops below the screen
             if (d.y > 660) {
                 d.y = Utils.randFloat(-60, -10);

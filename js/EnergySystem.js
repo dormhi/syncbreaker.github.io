@@ -4,8 +4,8 @@
 
 class EnergySystem {
     constructor() {
-        this.maxEnergy = 5;
-        this.currentEnergy = 5;
+        this.maxEnergy = 7;
+        this.currentEnergy = 7;
         this.regenInterval = 5 * 60; // 5 minutes
         this.regenTimer = 0;
 
@@ -54,7 +54,7 @@ class EnergySystem {
                 energy: this.currentEnergy,
                 ts: Date.now()
             }));
-        } catch (e) {}
+        } catch (e) { }
     }
 
     _load() {
