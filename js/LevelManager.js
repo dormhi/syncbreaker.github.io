@@ -60,7 +60,16 @@ class LevelManager {
         this.score = 0;
         this.combo = 0;
         this.maxCombo = 0;
-        this.lives = 3;
+        
+        // Dinamik yanma hakkı
+        if (index <= 2) {
+            this.maxLives = 3;
+        } else if (index <= 4) {
+            this.maxLives = 4;
+        } else {
+            this.maxLives = 5;
+        }
+        this.lives = this.maxLives;
         this.hitCount = 0;
         this.barPosition = 0;
         this.barSpeed = level.barSpeed;
@@ -296,7 +305,7 @@ class LevelManager {
         // Lives
         ctx.textAlign = 'right';
         ctx.font = '18px sans-serif';
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < (this.maxLives || 3); i++) {
             ctx.fillStyle = i < this.lives ? '#ef4444' : 'rgba(239,68,68,0.2)';
             ctx.fillText('♥', W - 16 - i * 24, 100);
         }
@@ -310,7 +319,7 @@ class LevelManager {
         try {
             const data = this.levels.map(l => ({ id: l.id, unlocked: l.unlocked, completed: l.completed, bestScore: l.bestScore }));
             localStorage.setItem('sb_progress', JSON.stringify(data));
-        } catch (e) {}
+        } catch (e) { }
     }
 
     _loadProgress() {
@@ -321,7 +330,7 @@ class LevelManager {
                 const l = this.levels.find(x => x.id === s.id);
                 if (l) { l.unlocked = s.unlocked; l.completed = s.completed; l.bestScore = s.bestScore; }
             }
-        } catch (e) {}
+        } catch (e) { }
     }
 
     // ════════════════════════════════════════
@@ -353,7 +362,7 @@ class LevelManager {
         this.score = 0;
         this.combo = 0;
         this.maxCombo = 0;
-        this.lives = 3;
+        this.lives = 6;
         this.hitCount = 0;
         this.barPosition = 0;
         this.barSpeed = this.currentLevel.barSpeed;
@@ -625,7 +634,7 @@ class LevelManager {
     _saveEndlessBest() {
         if (this.score > this.endlessBest) {
             this.endlessBest = this.score;
-            try { localStorage.setItem('sb_endless_best', this.score); } catch (e) {}
+            try { localStorage.setItem('sb_endless_best', this.score); } catch (e) { }
         }
     }
 
